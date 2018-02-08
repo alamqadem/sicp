@@ -1,6 +1,6 @@
 #lang sicp
 
-(#%require (file "util.rkt"))
+(#%require (file "../util.rkt"))
 
 ;ex. 2.34
 (define (horner-eval x coefficient-sequence)
