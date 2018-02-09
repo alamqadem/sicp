@@ -4,7 +4,7 @@
            add-rat sub-rat mul-rat div-rat equal-rat? numer denom print-rat make-rat
            add-interval mul-interval print-interval div-interval make-interval lower-bound
            upper-bound
-           accumulate filter
+           compose accumulate filter 
            fold-left fold-right
            enumerate-interval flatmap)
 (define (square x) (* x x))
@@ -278,5 +278,6 @@
 (define (flatmap proc seq)
   (accumulate append nil (map proc seq)))
 
-
+(define (compose f g)
+    (lambda (x) (f (g x))))
        
