@@ -3,7 +3,11 @@
 (#%require (file "../util.rkt"))
 (#%provide segment->painter make-screen display-screen
            make-segment make-vect
-           make-frame)
+           make-frame
+           transform-painter
+           flip-vert shrink-to-upper-right rotate90 squash-inwards beside flip-horiz rotate180
+           rotate270 below right-split up-split corner-split square-limit
+           outline-painter x-painter diamond-painter wave)
 
 (define (make-vect x y)
   (cons x y))
@@ -152,3 +156,224 @@
     (iter
      (point-sequence start-v end-v)
      screen)))
+
+(define (transform-painter painter origin corner1 corner2)
+  (lambda (frame)
+    (let ((m (frame-coord-map frame)))
+      (let ((new-origin (m origin)))
+        (painter (make-frame
+                  new-origin
+                  (sub-vect (m corner1) new-origin)
+                  (sub-vect (m corner2) new-origin)))))))
+(define (flip-vert painter)
+  (transform-painter painter
+                     (make-vect 0.0 1.0)
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 0.0)))
+(define (shrink-to-upper-right painter)
+  (transform-painter
+   painter (make-vect 0.5 0.5)
+   (make-vect 1.0 0.5) (make-vect 0.5 1.0)))
+(define (rotate90 painter)
+  (transform-painter painter
+                     (make-vect 1.0 0.0)
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 0.0)))
+(define (squash-inwards painter)
+  (transform-painter painter
+                     (make-vect 0.0 0.0)
+                     (make-vect 0.65 0.35)
+                     (make-vect 0.35 0.65)))
+(define (beside painter1 painter2)
+  (let ((split-point (make-vect 0.5 0.0)))
+    (let ((paint-left
+           (transform-painter
+            painter1
+            (make-vect 0.0 0.0)
+            split-point
+            (make-vect 0.0 1.0)))
+          (paint-right
+           (transform-painter
+            painter2
+            split-point
+            (make-vect 1.0 0.0)
+            (make-vect 0.5 1.0))))
+      (lambda (frame)
+        (lambda (screen)
+          ((paint-right frame) ((paint-left frame) screen)))))))
+
+
+(define (flip-horiz painter)
+  (transform-painter painter
+                     (make-vect 1.0 0.0)
+                     (make-vect 1.0 1.0)
+                     (make-vect 0.0 0.0)))
+(define (rotate180 painter)
+  (rotate90 (rotate90 painter)))
+(define (rotate270 painter)
+  (rotate90 (rotate180 painter)))
+
+(define (below painter1 painter2)
+  (let ((split-point (make-vect 0.0 0.5)))
+    (let ((paint-left
+           (transform-painter
+            painter1
+            (make-vect 0.0 0.0)
+            (make-vect 1.0 0.0)
+            split-point))
+          (paint-right
+           (transform-painter
+            painter2
+            split-point
+            (make-vect 1.0 0.5)
+            (make-vect 0.0 1.0))))
+      (lambda (frame)
+        (lambda (screen)
+          ((paint-right frame) ((paint-left frame) screen)))))))
+
+(define (right-split painter n)
+  (if (= n 0)
+      painter
+      (let ((smaller (right-split painter (- n 1))))
+        (beside painter (below smaller smaller)))))
+
+(define (up-split painter n)
+  (if (= n 0)
+      painter
+      (let ((smaller (up-split painter (- n 1))))
+        (below painter (beside smaller smaller)))))
+
+(define (square-limit painter n)
+  (let ((quarter (corner-split painter n)))
+    (let ((half (beside (flip-horiz quarter)
+                        quarter)))
+      (below (flip-vert half) half))))
+
+(define (corner-split painter n)
+  (if (= n 0)
+      painter
+      (let ((up (up-split painter (- n 1)))
+            (right (right-split painter 
+                                (- n 1))))
+        (let ((top-left (beside up up))
+              (bottom-right (below right 
+                                   right))
+              (corner (corner-split painter 
+                                    (- n 1))))
+          (beside (below painter top-left)
+                  (below bottom-right 
+                         corner))))))
+(define (outline-painter frame)
+  (let ((top-segment
+         (make-segment
+          (make-vect 0 0)
+          (make-vect 0 1)))
+        (bottom-segment
+         (make-segment
+          (make-vect 1 0)
+          (make-vect 1 1)))
+        (left-segment
+         (make-segment
+          (make-vect 0 0)
+          (make-vect 1 0)))
+        (right-segment
+         (make-segment
+          (make-vect 0 1)
+          (make-vect 1 1))))
+    (let ((segment-list
+           (list bottom-segment
+                 right-segment
+                 top-segment
+                 left-segment)))
+      ((segment->painter segment-list) frame))))
+
+(define (x-painter frame)
+  ((segment->painter
+    (list
+     (make-segment
+      (make-vect 0 0)
+      (make-vect 1 1))
+     (make-segment
+      (make-vect 0 1)
+      (make-vect 1 0)))) frame))
+
+(define (diamond-painter frame)
+  ((segment->painter
+    (list
+     (make-segment
+      (make-vect 0.5 0)
+      (make-vect 0 0.5))
+     (make-segment
+      (make-vect 0 0.5)
+      (make-vect 0.5 1))
+     (make-segment
+      (make-vect 0.5 1)
+      (make-vect 1 0.5))
+     (make-segment
+      (make-vect 0.5 0)
+      (make-vect 1 0.5)))) frame))
+
+(define (wave frame)
+  ((segment->painter
+    (list
+     (make-segment
+      (make-vect 0.45 0)
+      (make-vect 0.4 0.1))
+     (make-segment
+      (make-vect 0.4 0.1)
+      (make-vect 0.45 0.2))
+     (make-segment
+      (make-vect 0.45 0.2)
+      (make-vect 0.45 0.3))
+     (make-segment
+      (make-vect 0.35 0.25)
+      (make-vect 0.45 0.3))
+     (make-segment
+      (make-vect 0.35 0.25)
+      (make-vect 0.2 0.35))
+     (make-segment
+      (make-vect 0.2 0.35)
+      (make-vect 0 0.25))
+     (make-segment
+      (make-vect 0 0.35)
+      (make-vect 0.2 0.45))
+     (make-segment
+      (make-vect 0.2 0.45)
+      (make-vect 0.35 0.4))
+     (make-segment
+      (make-vect 0.35 0.4)
+      (make-vect 0.35 0.65))
+     (make-segment
+      (make-vect 0.4 0.65)
+      (make-vect 0.2 1))
+     (make-segment
+      (make-vect 0.5 0.65)
+      (make-vect 0.3 1))
+     (make-segment
+      (make-vect 0.55 0)
+      (make-vect 0.6 0.1))
+     (make-segment
+      (make-vect 0.6 0.1)
+      (make-vect 0.55 0.2))
+     (make-segment
+      (make-vect 0.55 0.2)
+      (make-vect 0.55 0.3))
+     (make-segment
+      (make-vect 0.55 0.3)
+      (make-vect 0.7 0.3))
+     (make-segment
+      (make-vect 0.7 0.3)
+      (make-vect 1 0.5))
+     (make-segment
+      (make-vect 0.6 0.4)
+      (make-vect 1 0.6))
+     (make-segment
+      (make-vect 0.6 0.4)
+      (make-vect 0.6 0.6))
+     (make-segment
+      (make-vect 0.6 0.6)
+      (make-vect 0.85 1))
+     (make-segment
+      (make-vect 0.5 0.65)
+      (make-vect 0.75 1))))
+   frame))
