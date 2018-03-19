@@ -2,6 +2,7 @@
 
 (#%require (file "../util.rkt") (file "paint.rkt"))
 
+;ex. 2.52
 ;a
 (define (wave frame)
   (let ((head (list
