@@ -1,7 +1,8 @@
 #lang sicp
 
 (#%require (file "../util.rkt"))
-
+(#%provide element-of-set? intersection-set adjoin-set)
+           
 (define (element-of-set? x set)
   (cond ((null? set) false)
         ((= x (car set)) true)
