@@ -2,6 +2,7 @@
 
 (#%require (file "../util.rkt") (file "huffman_encoding.rkt"))
 
+;ex. 2.68
 (define (encode message tree)
   (if (null? message)
       '()
