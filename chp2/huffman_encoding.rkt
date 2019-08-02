@@ -1,7 +1,7 @@
 #lang sicp
 
 (#%require (file "../util.rkt"))
-(#%provide make-leaf make-code-tree decode left-branch right-branch leaf? symbol-leaf symbols)
+(#%provide make-leaf make-code-tree decode left-branch right-branch leaf? symbol-leaf symbols make-leaf-set encode generate-huffman-tree)
 ;Huffman encoding trees
 
 (define (make-leaf symbol weight)
@@ -70,6 +70,59 @@
       (let ((pair (car pairs)))
         (adjoin-set
          (make-leaf (car pair) ;symbol
-                    (cdr pair));frequency
+                    (cadr pair));frequency
          (make-leaf-set (cdr pairs))))))
+
+(define (encode message tree)
+  (if (null? message)
+      '()
+      (append
+       (encode-symbol (car message)
+                      tree)
+       (encode (cdr message) tree))))
+
+(define (encode-symbol sym tree)
+  (define (encode-aux prefix tree)
+    (if (leaf? tree)
+        (if (eq? (symbol-leaf tree)
+                 sym)
+            prefix
+            '())
+        (let ((left-res (encode-aux (append prefix (list 0))
+                                    (left-branch tree))))
+          (if (null? left-res)
+                (encode-aux (append prefix (list 1))
+                            (right-branch tree))
+              left-res))))
+  (let ((res (encode-aux '() tree)))
+    (if (null? res)
+        (error "bad tree: symbol not found in tree" sym)
+        res)))
+
+(define (generate-huffman-tree pairs)
+  (successive-merge
+   (make-leaf-set pairs)))
+
+(define (successive-merge leaves)
+  (define (successive-merge-aux tree leaves1)
+    (cond ((empty? leaves1) ; aka empty
+           tree)
+          ((null? tree)
+           (successive-merge-aux
+            (car leaves1)
+            (cdr leaves1)))
+          (else
+           (successive-merge-aux
+            (make-code-tree
+             tree
+             (car leaves1))
+            (cdr leaves1)))))
+  (successive-merge-aux '() leaves))
+
+(define (empty? leaves)
+  (null? leaves))
+
+(define (one-leaf? leaves)
+  (and (not (empty? leaves))
+       (empty? (cdr leaves))))
           
