@@ -28,11 +28,12 @@
           op 
           type-tags))
         (let ((type (car types-to-try)))
-          (let ((coerced-types (coerce-to type type-tags)))
+          (let ((coerced-args (coerce-to type type-tags))
+                (coerced-types (map (lambda (i) (type)) args)))
             (if coerced-types
                 (let ((proc (get op coerced-types)))
                   (if proc
-                      (apply proc (map contents args))
+                      (apply proc (map contents coerced-args))
                       (apply-generic-aux (cdr types-to-try) type-tags)))
                 (apply-generic-aux (cdr types-to-try) type-tags))))))
 
