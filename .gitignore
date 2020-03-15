@@ -5,3 +5,6 @@
 *.rkt~
 *.rkt#*
 .#*.rkt
+**/compiled
+*~
+*.bak
