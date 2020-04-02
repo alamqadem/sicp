@@ -1,6 +1,10 @@
 #lang sicp
 
 (#%require (file "../util.rkt"))
+(#%provide ; connector
+            make-connector has-value? set-value! forget-value! connect
+           ; constraints 
+            adder multiplier constant probe)
 
 ; -------------------------------------- connector --------------------------------------------------------
 (define (make-connector)
