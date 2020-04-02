@@ -2,7 +2,7 @@
 
 (#%require (file "../util.rkt"))
 (#%provide ; connector
-            make-connector has-value? set-value! forget-value! connect
+            make-connector has-value? get-value set-value! forget-value! connect
            ; constraints 
             adder multiplier constant probe)
 
@@ -163,7 +163,7 @@
               ((eq? request 'I-lost-my-value)
                 (process-forget-value))
               (else 
-                (error "Unkown request: MULTIPLIER" request))))
+                (error "Unknown request: MULTIPLIER" request))))
     (connect m1 me)
     (connect m2 me)
     (connect product me)
