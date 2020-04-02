@@ -1,5 +1,5 @@
 #lang sicp
-(#%provide square average cube even? prime? fast-prime? divides? expmod sum fixed-point
+(#%provide square average cube even? sqrt prime? fast-prime? divides? expmod sum fixed-point
            tolerance dx fixed-point-of-transform fast-expt average-damp
            add-rat sub-rat mul-rat div-rat equal-rat? numer denom print-rat make-rat
            add-interval mul-interval print-interval div-interval make-interval lower-bound
@@ -179,6 +179,8 @@
            (newton-method
             (lambda (y) (- (square y) x)) 1.0))
 
+        
+
         (define (fixed-point-of-transform g transform guess)
             (fixed-point (transform g) guess))
 
@@ -189,6 +191,8 @@
        (define (sqrt-6 x)
          (fixed-point-of-transform
           (lambda (y) (- (square y) x)) newton-transform 1.0))
+
+       (define sqrt sqrt-6)
 
 ;sec. 2.1.1
 (define (add-rat x y)
